@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profiling with Nsight</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-card: #0d1117;
+            --bg-code: #161b22;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #76B900;
+            --accent-dim: #76B90044;
+            --accent-glow: #76B90033;
+            --border: #21262d;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-body: 'Inter', sans-serif;
+            --max-width: 900px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 17px;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Header ── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .series-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 .accent {
+            color: var(--accent);
+        }
+
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 2rem;
+        }
+
+        /* ── Tag Pills ── */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+            white-space: nowrap;
+        }
+
+        /* ── Pipeline Flow Bar ── */
+        .pipeline {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            max-width: var(--max-width);
+        }
+
+        .pipeline-step {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 0.3rem 0.7rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .pipeline-arrow {
+            color: var(--accent);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        /* ── Slides ── */
+        .slide {
+            min-height: 100vh;
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide-number {
+            font-family: var(--font-display);
+            font-size: 5rem;
+            font-weight: 700;
+            color: var(--accent-dim);
+            position: absolute;
+            top: 2rem;
+            right: 1.5rem;
+            line-height: 1;
+            user-select: none;
+        }
+
+        .slide h2 {
+            font-family: var(--font-display);
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            line-height: 1.25;
+        }
+
+        .slide h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .slide p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .slide p strong {
+            color: var(--text-primary);
+        }
+
+        .slide ul, .slide ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .slide li {
+            margin-bottom: 0.4rem;
+        }
+
+        .slide li strong {
+            color: var(--text-primary);
+        }
+
+        /* ── Code Blocks ── */
+        .code-block {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 1.25rem 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            background: rgba(118, 185, 0, 0.08);
+            padding: 0.4rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-block pre {
+            margin: 0;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #c9d1d9;
+        }
+
+        /* Syntax highlighting (manual) */
+        .kw { color: #ff7b72; }
+        .fn { color: #d2a8ff; }
+        .str { color: #a5d6ff; }
+        .cm { color: #8b949e; font-style: italic; }
+        .num { color: #79c0ff; }
+        .type { color: #ffa657; }
+        .dir { color: #ff7b72; }
+        .mac { color: #ffa657; }
+
+        /* ── Tables ── */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.25rem 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: var(--bg-code);
+            color: var(--accent);
+            font-weight: 600;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-display);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:nth-child(even) td {
+            background: rgba(13, 17, 23, 0.5);
+        }
+
+        /* ── Diagrams ── */
+        .diagram-flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .diagram-box {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .diagram-box.accent {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(118, 185, 0, 0.08);
+        }
+
+        .diagram-box.dim {
+            color: var(--text-secondary);
+            border-color: var(--border);
+        }
+
+        .diagram-arrow {
+            color: var(--accent);
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        /* Vertical flow diagrams */
+        .diagram-vertical {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .diagram-vertical .diagram-arrow {
+            font-size: 1.1rem;
+        }
+
+        /* Grid diagram */
+        .diagram-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .diagram-grid.cols-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .diagram-grid.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .diagram-panel {
+            padding: 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .diagram-panel.accent-border {
+            border-left: 3px solid var(--accent);
+        }
+
+        .diagram-panel h4 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .diagram-panel p, .diagram-panel ul {
+            font-size: 0.85rem;
+        }
+
+        /* ── Callout Boxes ── */
+        .callout {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+        }
+
+        .callout p {
+            margin-bottom: 0;
+        }
+
+        .callout .callout-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.3rem;
+        }
+
+        /* ── Contents list ── */
+        .contents-list {
+            list-style: none;
+            padding-left: 0;
+            counter-reset: contents;
+        }
+
+        .contents-list li {
+            counter-increment: contents;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .contents-list li:last-child {
+            border-bottom: none;
+        }
+
+        .contents-list li::before {
+            content: counter(contents, decimal-leading-zero);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            min-width: 2rem;
+        }
+
+        .contents-list a {
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .contents-list a:hover {
+            color: var(--accent);
+        }
+
+        /* ── Roofline Diagram ── */
+        .roofline-chart {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            margin: 1.5rem 0;
+            padding: 2.5rem 2.5rem 2.5rem 3.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .roofline-area {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .roofline-axis-y {
+            position: absolute;
+            left: -3rem;
+            top: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .roofline-axis-y span {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+        }
+
+        .roofline-axis-x {
+            position: absolute;
+            bottom: -1.8rem;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .roofline-axis-x span {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+        }
+
+        .roofline-label-y {
+            position: absolute;
+            left: -3.2rem;
+            top: 50%;
+            transform: rotate(-90deg) translateX(50%);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .roofline-label-x {
+            position: absolute;
+            bottom: -2.2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        /* The roof lines */
+        .roofline-compute {
+            position: absolute;
+            top: 8%;
+            left: 35%;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        .roofline-compute-label {
+            position: absolute;
+            top: 2%;
+            right: 5%;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+
+        .roofline-slope {
+            position: absolute;
+            bottom: 10%;
+            left: 0;
+            width: 42%;
+            height: 82%;
+            border-bottom: 2px solid #ffa657;
+            border-right: none;
+            transform-origin: bottom left;
+            background: linear-gradient(to top right, transparent calc(100% - 1.5px), #ffa657 calc(100% - 1.5px), #ffa657 100%);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+        }
+
+        .roofline-slope-label {
+            position: absolute;
+            top: 42%;
+            left: 8%;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: #ffa657;
+            transform: rotate(-52deg);
+            white-space: nowrap;
+        }
+
+        .roofline-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .roofline-marker-label {
+            position: absolute;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            white-space: nowrap;
+            transform: translateX(-50%);
+        }
+
+        .roofline-region-label {
+            position: absolute;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        /* ── Timeline Diagram ── */
+        .timeline-diagram {
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            min-width: 100px;
+            text-align: right;
+            padding-right: 0.75rem;
+        }
+
+        .timeline-track {
+            flex: 1;
+            height: 28px;
+            background: var(--bg-code);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .timeline-block {
+            position: absolute;
+            top: 3px;
+            bottom: 3px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 0.55rem;
+            color: #fff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 0 4px;
+        }
+
+        /* ── Metric Bar ── */
+        .metric-bar-wrap {
+            margin: 0.75rem 0;
+        }
+
+        .metric-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .metric-bar-label span:first-child {
+            color: var(--text-secondary);
+        }
+
+        .metric-bar-label span:last-child {
+            color: var(--text-primary);
+        }
+
+        .metric-bar {
+            height: 8px;
+            background: var(--bg-code);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .slide {
+                padding: 3rem 1rem;
+                min-height: auto;
+            }
+
+            .slide-number {
+                font-size: 3rem;
+                top: 1.5rem;
+                right: 1rem;
+            }
+
+            .slide h2 {
+                font-size: 1.5rem;
+            }
+
+            .diagram-grid.cols-2,
+            .diagram-grid.cols-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline {
+                gap: 0.15rem;
+            }
+
+            .pipeline-step {
+                font-size: 0.6rem;
+                padding: 0.2rem 0.4rem;
+            }
+
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            table {
+                font-size: 0.78rem;
+            }
+
+            .roofline-chart {
+                height: 240px;
+                padding: 2rem 2rem 2rem 2.5rem;
+            }
+
+            .timeline-label {
+                min-width: 70px;
+                font-size: 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════ HERO ════════════════════════════════════════════ -->
+<header class="hero">
+    <div class="series-label">CUDA Programming Series — Tutorial 07</div>
+    <h1>Profiling with <span class="accent">Nsight</span></h1>
+    <p class="subtitle">Hands-on profiling workflow with Nsight Systems and Nsight Compute — finding bottlenecks, occupancy analysis, memory throughput.</p>
+
+    <div class="tags">
+        <span class="tag">CUDA</span>
+        <span class="tag">Profiling</span>
+        <span class="tag">Nsight Systems</span>
+        <span class="tag">Nsight Compute</span>
+        <span class="tag">Occupancy</span>
+        <span class="tag">Roofline</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">Why Profile</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Nsight Systems</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Nsight Compute</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Occupancy</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Memory Analysis</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Worked Example</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Bottlenecks</span>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════ SLIDE 00 — Contents ═══════════════════════════════ -->
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <p>This tutorial walks through NVIDIA's profiling tools end-to-end: from high-level timeline analysis with Nsight Systems, to deep kernel-level analysis with Nsight Compute, to interpreting metrics and fixing real bottlenecks.</p>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Why Profile?</a></li>
+        <li><a href="#slide-02">Nsight Systems — Timeline View</a></li>
+        <li><a href="#slide-03">Nsight Compute — Kernel Analysis</a></li>
+        <li><a href="#slide-04">Occupancy Analysis</a></li>
+        <li><a href="#slide-05">Memory Throughput Analysis</a></li>
+        <li><a href="#slide-06">Worked Example — Profiling Matrix Multiply</a></li>
+        <li><a href="#slide-07">Common Bottleneck Patterns</a></li>
+        <li><a href="#slide-08">Summary &amp; Next Steps</a></li>
+    </ul>
+    <div class="callout">
+        <div class="callout-label">Prerequisites</div>
+        <p>Tutorials 01&ndash;05 (GPU Architecture, First Kernel, Memory &amp; Bandwidth, Thread Scheduling, Shared Memory &amp; Tiling). You should be comfortable writing and launching CUDA kernels before learning to profile them.</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 01 — Why Profile? ═══════════════════════════════ -->
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Why Profile?</h2>
+
+    <p>The gap between <strong>"premature optimisation"</strong> and <strong>"informed optimisation"</strong> is measurement. Profiling tells you exactly where your kernel spends its time — and whether you're limited by compute, memory, or something else entirely.</p>
+
+    <h3>"Premature" vs "Informed" Optimisation</h3>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Premature Optimisation</h4>
+            <ul>
+                <li>Guessing where the bottleneck is</li>
+                <li>Rewriting code that isn't slow</li>
+                <li>Adding complexity with no measurable gain</li>
+                <li>Micro-optimising a memory-bound kernel for compute</li>
+            </ul>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Informed Optimisation</h4>
+            <ul>
+                <li>Measuring first, optimising second</li>
+                <li>Targeting the actual bottleneck</li>
+                <li>Quantifying improvement with metrics</li>
+                <li>Knowing when you've hit the hardware ceiling</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3>The Roofline Model</h3>
+    <p>The roofline model plots <strong>achievable performance</strong> (GFLOP/s) against <strong>operational intensity</strong> (FLOP/byte). It reveals whether a kernel is <strong>compute-bound</strong> or <strong>memory-bound</strong> — the single most important classification for optimisation strategy.</p>
+
+    <!-- CSS Roofline Diagram -->
+    <div class="roofline-chart">
+        <div class="roofline-area">
+            <!-- Y axis labels -->
+            <div class="roofline-axis-y">
+                <span>10,000</span>
+                <span>1,000</span>
+                <span>100</span>
+                <span>10</span>
+            </div>
+
+            <!-- X axis labels -->
+            <div class="roofline-axis-x">
+                <span>0.1</span>
+                <span>1</span>
+                <span>10</span>
+                <span>100</span>
+            </div>
+
+            <!-- Axis labels -->
+            <div class="roofline-label-y">Performance (GFLOP/s)</div>
+            <div class="roofline-label-x">Operational Intensity (FLOP/byte)</div>
+
+            <!-- Compute ceiling (flat top) -->
+            <div class="roofline-compute"></div>
+            <div class="roofline-compute-label">Peak Compute (19.5 TFLOP/s)</div>
+
+            <!-- Memory bandwidth slope -->
+            <div class="roofline-slope"></div>
+            <div class="roofline-slope-label">Memory BW Slope (1 TB/s)</div>
+
+            <!-- Region labels -->
+            <div class="roofline-region-label" style="bottom: 18%; left: 5%;">Memory-Bound</div>
+            <div class="roofline-region-label" style="top: 18%; right: 8%;">Compute-Bound</div>
+
+            <!-- Naive matmul marker (low intensity, low on slope) -->
+            <div class="roofline-marker" style="left: 18%; top: 62%; background: #ff7b72; border: 2px solid #ff7b72;"></div>
+            <div class="roofline-marker-label" style="left: 18%; top: 72%; color: #ff7b72;">Naive MatMul</div>
+
+            <!-- Tiled matmul marker (higher intensity, near roof) -->
+            <div class="roofline-marker" style="left: 58%; top: 14%; background: var(--accent); border: 2px solid var(--accent);"></div>
+            <div class="roofline-marker-label" style="left: 58%; top: 24%; color: var(--accent);">Tiled MatMul</div>
+
+            <!-- Ridge point -->
+            <div style="position: absolute; left: 35%; top: 8%; bottom: 10%; border-left: 1px dashed var(--text-secondary); opacity: 0.3;"></div>
+            <div style="position: absolute; left: 33%; top: 50%; font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-secondary); opacity: 0.5; transform: rotate(-90deg); white-space: nowrap;">Ridge Point</div>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Key Insight</div>
+        <p>If your kernel sits on the <strong>slope</strong>, you're memory-bound — optimise memory access patterns (coalescing, caching, tiling). If it sits on the <strong>flat ceiling</strong>, you're compute-bound — reduce arithmetic, use intrinsics, or leverage Tensor Cores.</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 02 — Nsight Systems ═══════════════════════════════ -->
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Nsight Systems — Timeline View</h2>
+
+    <p><strong>Nsight Systems</strong> is your starting point for profiling. It captures a system-wide timeline showing CPU activity, CUDA API calls, kernel launches, and memory transfers — giving you the big picture before you dive into individual kernels.</p>
+
+    <h3>Installation</h3>
+    <p>Nsight Systems ships with the CUDA Toolkit. Verify your installation:</p>
+
+    <div class="code-block">
+        <div class="code-header">terminal</div>
+        <pre><code><span class="cm"># Check nsys is installed</span>
+<span class="fn">nsys</span> <span class="str">--version</span>
+
+<span class="cm"># If not found, install via CUDA Toolkit or standalone package</span>
+<span class="fn">sudo</span> apt install nsight-systems    <span class="cm"># Ubuntu/Debian</span></code></pre>
+    </div>
+
+    <h3>Basic Profiling Command</h3>
+    <div class="code-block">
+        <div class="code-header">terminal — profile your application</div>
+        <pre><code><span class="cm"># Basic profiling — generates a .nsys-rep report file</span>
+<span class="fn">nsys</span> profile <span class="str">--stats=true</span> <span class="str">-o</span> my_report ./my_app
+
+<span class="cm"># With trace options for CUDA and OS runtime</span>
+<span class="fn">nsys</span> profile \
+    <span class="str">--trace=cuda,osrt,nvtx</span> \
+    <span class="str">--cuda-memory-usage=true</span> \
+    <span class="str">--stats=true</span> \
+    <span class="str">-o</span> matmul_profile \
+    ./matmul
+
+<span class="cm"># Export to SQLite for custom analysis</span>
+<span class="fn">nsys</span> export <span class="str">--type=sqlite</span> my_report.nsys-rep</code></pre>
+    </div>
+
+    <h3>Reading the Timeline</h3>
+    <p>The Nsight Systems GUI shows parallel rows for each activity stream. Here is what a typical timeline looks like:</p>
+
+    <!-- Timeline Diagram -->
+    <div class="timeline-diagram">
+        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); margin-bottom: 0.75rem; text-align: center;">Nsight Systems Timeline</div>
+
+        <div class="timeline-row">
+            <div class="timeline-label">CPU Thread</div>
+            <div class="timeline-track">
+                <div class="timeline-block" style="left: 2%; width: 8%; background: #8b949e;">Setup</div>
+                <div class="timeline-block" style="left: 12%; width: 5%; background: #ffa657;">cudaMalloc</div>
+                <div class="timeline-block" style="left: 19%; width: 4%; background: #ffa657;">cudaMemcpy</div>
+                <div class="timeline-block" style="left: 25%; width: 3%; background: #d2a8ff;">Launch</div>
+                <div class="timeline-block" style="left: 30%; width: 18%; background: #8b949e55; border: 1px dashed #8b949e; color: #8b949e;">cudaDeviceSynchronize</div>
+                <div class="timeline-block" style="left: 50%; width: 4%; background: #ffa657;">cudaMemcpy</div>
+                <div class="timeline-block" style="left: 56%; width: 4%; background: #ffa657;">cudaFree</div>
+            </div>
+        </div>
+
+        <div class="timeline-row">
+            <div class="timeline-label">Memcpy</div>
+            <div class="timeline-track">
+                <div class="timeline-block" style="left: 19%; width: 6%; background: #79c0ff;">H&rarr;D</div>
+                <div class="timeline-block" style="left: 50%; width: 5%; background: #a5d6ff;">D&rarr;H</div>
+            </div>
+        </div>
+
+        <div class="timeline-row">
+            <div class="timeline-label">Kernel</div>
+            <div class="timeline-track">
+                <div class="timeline-block" style="left: 27%; width: 20%; background: var(--accent);">matmul_kernel &lt;&lt;&lt;grid, block&gt;&gt;&gt;</div>
+            </div>
+        </div>
+    </div>
+
+    <h3>What to Look For</h3>
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Gaps in Timeline</h4>
+            <p>Empty space = idle GPU. Usually caused by synchronisation, CPU bottlenecks, or insufficient overlap.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Long Memcpy Blocks</h4>
+            <p>Large transfers between H&rarr;D or D&rarr;H relative to kernel time suggest you should use pinned memory or streams.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Short Kernels</h4>
+            <p>Kernel launch overhead (~5&ndash;10 &mu;s) dominates if the kernel itself runs for only microseconds. Consider kernel fusion.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Workflow Tip</div>
+        <p>Always start with <code>nsys profile</code> for the big picture. Only move to Nsight Compute once you know <strong>which kernel</strong> to optimise.</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 03 — Nsight Compute ═══════════════════════════════ -->
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Nsight Compute — Kernel Analysis</h2>
+
+    <p><strong>Nsight Compute</strong> (ncu) is the kernel-level profiler. It replays your kernel multiple times to collect detailed hardware performance counters, giving you a precise breakdown of what the hardware is doing during execution.</p>
+
+    <h3>Basic Commands</h3>
+    <div class="code-block">
+        <div class="code-header">terminal — Nsight Compute profiling</div>
+        <pre><code><span class="cm"># Full metric set for all kernels</span>
+<span class="fn">ncu</span> <span class="str">--set full</span> ./my_app
+
+<span class="cm"># Profile a specific kernel by name</span>
+<span class="fn">ncu</span> <span class="str">--set full</span> \
+    <span class="str">--kernel-name matmul_kernel</span> \
+    <span class="str">--launch-skip 0</span> \
+    <span class="str">--launch-count 1</span> \
+    ./my_app
+
+<span class="cm"># Save report for GUI analysis</span>
+<span class="fn">ncu</span> <span class="str">--set full</span> <span class="str">-o</span> matmul_report ./my_app
+
+<span class="cm"># Open in GUI</span>
+<span class="fn">ncu-ui</span> matmul_report.ncu-rep
+
+<span class="cm"># Compare two reports (before/after optimisation)</span>
+<span class="fn">ncu</span> <span class="str">--set full</span> <span class="str">-o</span> before ./my_app_v1
+<span class="fn">ncu</span> <span class="str">--set full</span> <span class="str">-o</span> after ./my_app_v2
+<span class="fn">ncu-ui</span> <span class="str">--diff</span> before.ncu-rep after.ncu-rep</code></pre>
+    </div>
+
+    <h3>Key Metric Sections</h3>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Speed of Light (SOL)</h4>
+            <p>Shows what % of theoretical peak you achieved for both <strong>compute</strong> and <strong>memory</strong>. The higher number tells you the bottleneck.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Compute Throughput</h4>
+            <p>Executed operations vs peak. Broken down by pipe: FMA, ALU, FP64, Tensor, etc. Low values mean wasted cycles.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Memory Throughput</h4>
+            <p>Bytes moved vs peak bandwidth for each memory level: global, L2, L1/shared. Reveals cache effectiveness.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Occupancy</h4>
+            <p>Theoretical max warps vs achieved. Shows limiting factors: registers per thread, shared memory per block, or block size.</p>
+        </div>
+    </div>
+
+    <h3>SOL Analysis — Reading the Chart</h3>
+    <p>The SOL chart is the first thing to check. It shows compute and memory utilisation as a percentage of the hardware peak:</p>
+
+    <div style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin: 1.25rem 0;">
+        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); margin-bottom: 1rem;">Speed of Light — Throughput</div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar-label"><span>SM [%]</span> <span>23.4%</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 23.4%; background: #ff7b72;"></div></div>
+        </div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar-label"><span>Memory [%]</span> <span>78.6%</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 78.6%; background: var(--accent);"></div></div>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.75rem;">
+            Memory &gt;&gt; Compute &rarr; This kernel is <span style="color: #ffa657;">memory-bound</span>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Kernel Replay</div>
+        <p>Nsight Compute replays each kernel multiple times to collect counters. This means <strong>profiling is much slower than normal execution</strong>. Use <code>--launch-count</code> and <code>--kernel-name</code> to limit which kernels are profiled.</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 04 — Occupancy Analysis ═══════════════════════════════ -->
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Occupancy Analysis</h2>
+
+    <p><strong>Occupancy</strong> is the ratio of active warps on an SM to the maximum number the SM supports. Higher occupancy generally helps hide memory latency — but 100% is not always the goal. The right level depends on your kernel's characteristics.</p>
+
+    <h3>Theoretical vs Achieved Occupancy</h3>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Theoretical Occupancy</h4>
+            <p>The maximum possible given your kernel's resource usage (registers, shared memory, block size). Computed statically before the kernel runs.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Achieved Occupancy</h4>
+            <p>The actual average number of active warps divided by the maximum, measured during execution. Always &le; theoretical occupancy.</p>
+        </div>
+    </div>
+
+    <h3>Limiting Factors</h3>
+    <p>Three resources compete for SM capacity. Whichever one runs out first limits your occupancy:</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Limiting Factor</th>
+                    <th>How It Limits Occupancy</th>
+                    <th>How to Check</th>
+                    <th>Typical Fix</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Registers per thread</strong></td>
+                    <td>SM has 65,536 registers. If each thread uses 64, a block of 256 threads needs 16,384 &mdash; only 4 blocks fit.</td>
+                    <td><code>ncu --set full</code> &rarr; Occupancy section</td>
+                    <td><code>__launch_bounds__</code>, reduce local variables, use <code>-maxrregcount</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Shared memory per block</strong></td>
+                    <td>SM has 48&ndash;228 KB shared memory. Large tile sizes can consume it all, limiting concurrent blocks.</td>
+                    <td><code>ncu --set full</code> &rarr; Occupancy section</td>
+                    <td>Reduce tile size, use dynamic shared memory, tune with <code>cudaFuncSetAttribute</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Block size (threads per block)</strong></td>
+                    <td>SM supports max 1,536&ndash;2,048 threads. Large blocks (1024) mean fewer concurrent blocks per SM.</td>
+                    <td><code>ncu --set full</code> &rarr; Occupancy section</td>
+                    <td>Experiment with 128, 256, or 512 threads per block</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Using the Occupancy Calculator</h3>
+    <div class="code-block">
+        <div class="code-header">CUDA — querying occupancy programmatically</div>
+        <pre><code><span class="cm">// Query max active blocks for a given kernel and block size</span>
+<span class="type">int</span> numBlocks;
+<span class="fn">cudaOccupancyMaxActiveBlocksPerMultiprocessor</span>(
+    &amp;numBlocks,
+    matmul_kernel,   <span class="cm">// kernel function</span>
+    <span class="num">256</span>,             <span class="cm">// block size</span>
+    <span class="num">0</span>               <span class="cm">// dynamic shared memory bytes</span>
+);
+<span class="fn">printf</span>(<span class="str">"Max active blocks per SM: %d\n"</span>, numBlocks);
+
+<span class="cm">// Let CUDA suggest an optimal block size</span>
+<span class="type">int</span> minGridSize, blockSize;
+<span class="fn">cudaOccupancyMaxPotentialBlockSize</span>(
+    &amp;minGridSize,
+    &amp;blockSize,
+    matmul_kernel,  <span class="cm">// kernel function</span>
+    <span class="num">0</span>,              <span class="cm">// dynamic shared memory per block</span>
+    <span class="num">0</span>              <span class="cm">// block size limit (0 = no limit)</span>
+);
+<span class="fn">printf</span>(<span class="str">"Suggested block size: %d\n"</span>, blockSize);
+<span class="fn">printf</span>(<span class="str">"Min grid size for full occupancy: %d\n"</span>, minGridSize);</code></pre>
+    </div>
+
+    <h3>Visualising Occupancy Impact</h3>
+    <div style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin: 1.25rem 0;">
+        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); margin-bottom: 1rem;">Occupancy vs Block Size (example: 40 regs/thread, 0 shared mem)</div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar-label"><span>Block 64 &mdash; 4 blocks/SM</span> <span>12.5%</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 12.5%; background: #ff7b72;"></div></div>
+        </div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar-label"><span>Block 128 &mdash; 8 blocks/SM</span> <span>50%</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #ffa657;"></div></div>
+        </div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar-label"><span>Block 256 &mdash; 4 blocks/SM</span> <span>50%</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #ffa657;"></div></div>
+        </div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar-label"><span>Block 512 &mdash; 2 blocks/SM</span> <span>50%</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #ffa657;"></div></div>
+        </div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar-label"><span>Block 1024 &mdash; 1 block/SM</span> <span>50%</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #ffa657;"></div></div>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Important</div>
+        <p>High occupancy does not guarantee high performance. A kernel at 50% occupancy with efficient memory access can outperform one at 100% occupancy with poor coalescing. Use occupancy as <strong>one input</strong>, not the only metric.</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 05 — Memory Throughput ═══════════════════════════════ -->
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Memory Throughput Analysis</h2>
+
+    <p>Most CUDA kernels are memory-bound. Understanding where your bytes travel — and how efficiently — is critical for getting close to the roofline. Nsight Compute breaks down memory throughput at every level of the hierarchy.</p>
+
+    <h3>Global Load/Store Efficiency</h3>
+    <p><strong>Global memory efficiency</strong> measures how many of the bytes fetched from global memory were actually requested by the kernel. Uncoalesced accesses waste bandwidth by loading unused bytes.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Coalesced Access (100% efficiency)</h4>
+            <p>32 threads in a warp each access consecutive 4-byte elements. One 128-byte transaction serves all 32 threads.</p>
+            <div style="display: flex; gap: 2px; margin-top: 0.5rem;">
+                <div style="flex: 1; height: 16px; background: var(--accent); border-radius: 2px; opacity: 0.7;"></div>
+                <div style="flex: 1; height: 16px; background: var(--accent); border-radius: 2px; opacity: 0.7;"></div>
+                <div style="flex: 1; height: 16px; background: var(--accent); border-radius: 2px; opacity: 0.7;"></div>
+                <div style="flex: 1; height: 16px; background: var(--accent); border-radius: 2px; opacity: 0.7;"></div>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-secondary); margin-top: 0.3rem; text-align: center;">1 transaction &rarr; 128 bytes used / 128 bytes fetched</div>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Strided Access (25% efficiency)</h4>
+            <p>32 threads each access every 4th element. Four 128-byte transactions needed, but only 128 bytes are useful.</p>
+            <div style="display: flex; gap: 2px; margin-top: 0.5rem;">
+                <div style="flex: 1; height: 16px; background: #ff7b72; border-radius: 2px; opacity: 0.4;"></div>
+                <div style="flex: 1; height: 16px; background: #ff7b72; border-radius: 2px; opacity: 0.4;"></div>
+                <div style="flex: 1; height: 16px; background: #ff7b72; border-radius: 2px; opacity: 0.4;"></div>
+                <div style="flex: 1; height: 16px; background: #ff7b72; border-radius: 2px; opacity: 0.4;"></div>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-secondary); margin-top: 0.3rem; text-align: center;">4 transactions &rarr; 128 bytes used / 512 bytes fetched</div>
+        </div>
+    </div>
+
+    <h3>L1/L2 Hit Rates</h3>
+    <p>Cache hit rates tell you how well your access pattern exploits spatial and temporal locality:</p>
+
+    <div class="code-block">
+        <div class="code-header">ncu metrics — cache hit rates</div>
+        <pre><code><span class="cm"># Query specific memory metrics</span>
+<span class="fn">ncu</span> <span class="str">--metrics</span> \
+    l1tex__t_sectors_pipe_lsu_mem_global_op_ld_hit_rate.pct,\
+    lts__t_sectors_srcunit_tex_op_read_hit_rate.pct,\
+    smsp__sass_average_data_bytes_per_sector_mem_global_op_ld.pct \
+    ./my_app</code></pre>
+    </div>
+
+    <h3>Key Memory Metrics from Nsight Compute</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>What It Measures</th>
+                    <th>Good Value</th>
+                    <th>Poor Value Indicates</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Global Load Efficiency</strong></td>
+                    <td>Useful bytes / total bytes fetched for loads</td>
+                    <td>&gt; 80%</td>
+                    <td>Uncoalesced / strided access</td>
+                </tr>
+                <tr>
+                    <td><strong>Global Store Efficiency</strong></td>
+                    <td>Useful bytes / total bytes for stores</td>
+                    <td>&gt; 80%</td>
+                    <td>Uncoalesced / scattered writes</td>
+                </tr>
+                <tr>
+                    <td><strong>L1 Hit Rate</strong></td>
+                    <td>Fraction of L1 requests served without going to L2</td>
+                    <td>&gt; 50%</td>
+                    <td>Poor spatial locality, large working set</td>
+                </tr>
+                <tr>
+                    <td><strong>L2 Hit Rate</strong></td>
+                    <td>Fraction of L2 requests served without going to DRAM</td>
+                    <td>&gt; 60%</td>
+                    <td>Working set exceeds L2 capacity</td>
+                </tr>
+                <tr>
+                    <td><strong>DRAM Throughput</strong></td>
+                    <td>Bytes/sec actually moved from/to global memory</td>
+                    <td>&gt; 70% of peak</td>
+                    <td>Access pattern issues, low occupancy</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Identifying Uncoalesced Access</h3>
+    <div class="code-block">
+        <div class="code-header">ncu — check for coalescing issues</div>
+        <pre><code><span class="cm"># Sectors per request &gt; 1 means uncoalesced access</span>
+<span class="fn">ncu</span> <span class="str">--metrics</span> \
+    l1tex__average_t_sectors_per_request_pipe_lsu_mem_global_op_ld.ratio,\
+    l1tex__average_t_sectors_per_request_pipe_lsu_mem_global_op_st.ratio \
+    ./my_app
+
+<span class="cm"># Ideal: ratio close to 1.0 for 32-bit loads</span>
+<span class="cm"># Values of 4+ indicate severe coalescing problems</span></code></pre>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Rule of Thumb</div>
+        <p>If global load efficiency is below 50%, fixing your memory access pattern (coalescing, shared memory tiling, or data layout changes) will almost certainly give a bigger speedup than any compute optimisation.</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 06 — Worked Example ═══════════════════════════════ -->
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Worked Example — Profiling Matrix Multiply</h2>
+
+    <p>Let's walk through profiling two versions of matrix multiplication: a <strong>naive</strong> implementation and a <strong>shared-memory tiled</strong> version. We'll see exactly how the metrics change and why.</p>
+
+    <h3>Step 1 — Profile the Naive Kernel</h3>
+    <div class="code-block">
+        <div class="code-header">terminal — profile naive matmul</div>
+        <pre><code><span class="cm"># First, get the big picture with Nsight Systems</span>
+<span class="fn">nsys</span> profile <span class="str">--stats=true</span> <span class="str">-o</span> naive_timeline ./matmul_naive
+
+<span class="cm"># Then drill into the kernel with Nsight Compute</span>
+<span class="fn">ncu</span> <span class="str">--set full</span> \
+    <span class="str">--kernel-name matmul_naive_kernel</span> \
+    <span class="str">--launch-count 1</span> \
+    <span class="str">-o</span> naive_kernel \
+    ./matmul_naive</code></pre>
+    </div>
+
+    <h3>Step 2 — Profile the Tiled Kernel</h3>
+    <div class="code-block">
+        <div class="code-header">terminal — profile tiled matmul</div>
+        <pre><code><span class="fn">nsys</span> profile <span class="str">--stats=true</span> <span class="str">-o</span> tiled_timeline ./matmul_tiled
+
+<span class="fn">ncu</span> <span class="str">--set full</span> \
+    <span class="str">--kernel-name matmul_tiled_kernel</span> \
+    <span class="str">--launch-count 1</span> \
+    <span class="str">-o</span> tiled_kernel \
+    ./matmul_tiled</code></pre>
+    </div>
+
+    <h3>Step 3 — Compare Results</h3>
+    <p>Here's what the metrics look like side by side for a 1024&times;1024 single-precision matrix multiply on an RTX 4090:</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Naive</th>
+                    <th>Tiled (32&times;32)</th>
+                    <th>Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Kernel Duration</strong></td>
+                    <td>4.82 ms</td>
+                    <td>0.61 ms</td>
+                    <td style="color: var(--accent);">7.9&times; faster</td>
+                </tr>
+                <tr>
+                    <td><strong>SOL SM [%]</strong></td>
+                    <td>12.1%</td>
+                    <td>68.4%</td>
+                    <td style="color: var(--accent);">&uarr; 5.7&times;</td>
+                </tr>
+                <tr>
+                    <td><strong>SOL Memory [%]</strong></td>
+                    <td>78.6%</td>
+                    <td>34.2%</td>
+                    <td style="color: #ff7b72;">&darr; (good: no longer the bottleneck)</td>
+                </tr>
+                <tr>
+                    <td><strong>DRAM Throughput</strong></td>
+                    <td>742 GB/s</td>
+                    <td>108 GB/s</td>
+                    <td style="color: var(--accent);">6.9&times; less DRAM traffic</td>
+                </tr>
+                <tr>
+                    <td><strong>L1 Hit Rate</strong></td>
+                    <td>0%</td>
+                    <td>0%</td>
+                    <td>&mdash; (shared mem bypasses L1)</td>
+                </tr>
+                <tr>
+                    <td><strong>Achieved Occupancy</strong></td>
+                    <td>49.8%</td>
+                    <td>49.2%</td>
+                    <td>&mdash; (similar)</td>
+                </tr>
+                <tr>
+                    <td><strong>Global Load Efficiency</strong></td>
+                    <td>100%</td>
+                    <td>100%</td>
+                    <td>&mdash; (both coalesced)</td>
+                </tr>
+                <tr>
+                    <td><strong>Shared Memory Throughput</strong></td>
+                    <td>0 GB/s</td>
+                    <td>3,412 GB/s</td>
+                    <td style="color: var(--accent);">Tiling effect</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>SOL Comparison — Before &amp; After</h3>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel" style="border-left: 3px solid #ff7b72;">
+            <h4 style="color: #ff7b72;">Naive MatMul — Memory-Bound</h4>
+            <div class="metric-bar-wrap">
+                <div class="metric-bar-label"><span>SM [%]</span> <span>12.1%</span></div>
+                <div class="metric-bar"><div class="metric-bar-fill" style="width: 12.1%; background: #ff7b72;"></div></div>
+            </div>
+            <div class="metric-bar-wrap">
+                <div class="metric-bar-label"><span>Memory [%]</span> <span>78.6%</span></div>
+                <div class="metric-bar"><div class="metric-bar-fill" style="width: 78.6%; background: #ff7b72;"></div></div>
+            </div>
+            <p style="font-size: 0.75rem; margin-top: 0.5rem;">Bottleneck: DRAM bandwidth</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Tiled MatMul — Balanced</h4>
+            <div class="metric-bar-wrap">
+                <div class="metric-bar-label"><span>SM [%]</span> <span>68.4%</span></div>
+                <div class="metric-bar"><div class="metric-bar-fill" style="width: 68.4%; background: var(--accent);"></div></div>
+            </div>
+            <div class="metric-bar-wrap">
+                <div class="metric-bar-label"><span>Memory [%]</span> <span>34.2%</span></div>
+                <div class="metric-bar"><div class="metric-bar-fill" style="width: 34.2%; background: var(--accent);"></div></div>
+            </div>
+            <p style="font-size: 0.75rem; margin-top: 0.5rem;">Bottleneck: shifting toward compute</p>
+        </div>
+    </div>
+
+    <h3>What Happened?</h3>
+    <div class="diagram-flow">
+        <div class="diagram-box">Naive: every C[i][j] loads N floats from A and N from B in global memory</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Tiled: load once into shared memory, reuse N/TILE_SIZE times</div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Key Takeaway</div>
+        <p>Tiling reduced DRAM traffic by ~7&times; by converting redundant global loads into fast shared memory reads. The kernel moved from memory-bound to compute-bound on the roofline — now further gains require compute optimisations (loop unrolling, vectorised loads, Tensor Cores).</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 07 — Common Bottleneck Patterns ═══════════════════════════════ -->
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Common Bottleneck Patterns</h2>
+
+    <p>After profiling many CUDA kernels, the same patterns emerge repeatedly. This reference table maps observable symptoms in profiler output to their likely root causes and fixes.</p>
+
+    <h3>Symptom &rarr; Cause &rarr; Fix</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Symptom in Profiler</th>
+                    <th>Likely Cause</th>
+                    <th>Fix</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SOL Memory &gt;&gt; SOL Compute</td>
+                    <td>Kernel is memory-bound; spending most time waiting for data</td>
+                    <td>Shared memory tiling, data reuse, coalescing, cache-friendly layout</td>
+                </tr>
+                <tr>
+                    <td>SOL Compute &gt;&gt; SOL Memory</td>
+                    <td>Kernel is compute-bound; ALUs are saturated</td>
+                    <td>Algorithmic improvements, Tensor Cores, reduced precision (FP16/BF16)</td>
+                </tr>
+                <tr>
+                    <td>Both SOL Compute and SOL Memory low</td>
+                    <td>Latency-bound: not enough active warps to hide memory latency</td>
+                    <td>Increase occupancy (tune block size, reduce register pressure)</td>
+                </tr>
+                <tr>
+                    <td>Global load efficiency &lt; 50%</td>
+                    <td>Uncoalesced memory access (strided or random pattern)</td>
+                    <td>Restructure data layout (AoS &rarr; SoA), transpose access, use shared memory</td>
+                </tr>
+                <tr>
+                    <td>High DRAM traffic but low L2 hit rate</td>
+                    <td>Working set too large for L2 cache</td>
+                    <td>Tile the algorithm, process data in cache-sized chunks</td>
+                </tr>
+                <tr>
+                    <td>Achieved occupancy &lt;&lt; theoretical</td>
+                    <td>Block-level synchronisation stalls, load imbalance, tail effect</td>
+                    <td>Balance workload per block, reduce <code>__syncthreads()</code> frequency</td>
+                </tr>
+                <tr>
+                    <td>Long gaps between kernels in timeline</td>
+                    <td>CPU bottleneck or synchronisation between launches</td>
+                    <td>Use CUDA streams, overlap compute and memory, reduce host-side work</td>
+                </tr>
+                <tr>
+                    <td>H&rarr;D / D&rarr;H transfers dominate timeline</td>
+                    <td>Excessive data transfer overhead</td>
+                    <td>Pinned memory (<code>cudaMallocHost</code>), async transfers, keep data on GPU</td>
+                </tr>
+                <tr>
+                    <td>High warp stall (not selected / memory dependency)</td>
+                    <td>Memory latency not hidden by available parallelism</td>
+                    <td>Increase ILP (instruction-level parallelism), prefetch, increase occupancy</td>
+                </tr>
+                <tr>
+                    <td>High branch divergence in warp stall reasons</td>
+                    <td>Threads within a warp taking different paths</td>
+                    <td>Reorganise data so nearby threads take same path, predication</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>The Profiling Workflow</h3>
+    <div class="diagram-vertical">
+        <div class="diagram-box accent">1. nsys profile &mdash; get the big picture</div>
+        <div class="diagram-arrow">&darr;</div>
+        <div class="diagram-box">2. Identify the hottest kernel</div>
+        <div class="diagram-arrow">&darr;</div>
+        <div class="diagram-box accent">3. ncu --set full &mdash; deep dive on that kernel</div>
+        <div class="diagram-arrow">&darr;</div>
+        <div class="diagram-box">4. Check SOL: memory-bound or compute-bound?</div>
+        <div class="diagram-arrow">&darr;</div>
+        <div class="diagram-box">5. Apply targeted fix from the table above</div>
+        <div class="diagram-arrow">&darr;</div>
+        <div class="diagram-box accent">6. Re-profile to verify improvement</div>
+        <div class="diagram-arrow">&darr;</div>
+        <div class="diagram-box dim">7. Repeat until satisfied or hardware-limited</div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Golden Rule</div>
+        <p>Never optimise without profiling first. Never assume your fix worked without profiling again. The profiler is the source of truth.</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 08 — Summary ═══════════════════════════════ -->
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Summary &amp; Next Steps</h2>
+
+    <h3>What We Covered</h3>
+    <ul>
+        <li><strong>The roofline model</strong> — classifying kernels as compute-bound or memory-bound</li>
+        <li><strong>Nsight Systems</strong> — system-wide timeline profiling with <code>nsys profile</code></li>
+        <li><strong>Nsight Compute</strong> — kernel-level hardware counter analysis with <code>ncu --set full</code></li>
+        <li><strong>Occupancy analysis</strong> — theoretical vs achieved, limiting factors, programmatic queries</li>
+        <li><strong>Memory throughput</strong> — global efficiency, L1/L2 hit rates, coalescing diagnostics</li>
+        <li><strong>Worked example</strong> — profiling naive vs tiled matmul to see real metric changes</li>
+        <li><strong>Bottleneck patterns</strong> — a reference table for diagnosing and fixing common issues</li>
+    </ul>
+
+    <h3>Key Takeaways</h3>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Profile First, Optimise Second</h4>
+            <p>Nsight Systems gives the big picture. Nsight Compute gives the detail. Always start with the former, then drill into the hottest kernel with the latter.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Know Your Bottleneck</h4>
+            <p>The SOL chart is your compass. Memory-bound and compute-bound kernels need completely different optimisation strategies. Applying the wrong one wastes time.</p>
+        </div>
+    </div>
+
+    <h3>Essential Commands Cheat Sheet</h3>
+    <div class="code-block">
+        <div class="code-header">terminal — quick reference</div>
+        <pre><code><span class="cm"># System-wide timeline</span>
+<span class="fn">nsys</span> profile <span class="str">--stats=true</span> <span class="str">-o</span> report ./my_app
+
+<span class="cm"># Kernel deep dive</span>
+<span class="fn">ncu</span> <span class="str">--set full</span> <span class="str">-o</span> kernel_report ./my_app
+
+<span class="cm"># Compare before/after</span>
+<span class="fn">ncu-ui</span> <span class="str">--diff</span> before.ncu-rep after.ncu-rep
+
+<span class="cm"># Query specific metrics</span>
+<span class="fn">ncu</span> <span class="str">--metrics</span> sm__throughput.avg.pct_of_peak_sustained_elapsed,\
+    dram__throughput.avg.pct_of_peak_sustained_elapsed \
+    ./my_app</code></pre>
+    </div>
+
+    <h3>Next Tutorial</h3>
+    <div class="callout">
+        <div class="callout-label">Up Next — Tutorial 08</div>
+        <p><strong><a href="https://brendanjameslynskey.github.io/CUDA_08_Streams/" style="color: var(--accent); text-decoration: none;">CUDA Streams &amp; Concurrency</a></strong> — overlap kernel execution with memory transfers, launch multiple kernels concurrently, and use events for fine-grained timing and synchronisation.</p>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════ Footer ════════════════════════════════════ -->
+<footer class="footer">
+    <p>Part of the <a href="https://github.com/BrendanJamesLynskey/LLMs#cuda-programming">CUDA Programming Series</a></p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">Profiling with Nsight — Tutorial 07 of 10</p>
+</footer>
+
+<script>
+    // Smooth scroll for table-of-contents links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+
+    // Subtle fade-in animation for slides on scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.slide').forEach(slide => {
+        slide.style.opacity = '0';
+        slide.style.transform = 'translateY(30px)';
+        slide.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(slide);
+    });
+</script>
+
+</body>
+</html>
