@@ -9,15 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0a0a0a;
-            --bg-card: #0d1117;
-            --bg-code: #161b22;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --accent: #76B900;
-            --accent-dim: #76B90044;
-            --accent-glow: #76B90033;
-            --border: #21262d;
+            --bg-primary: #1b1b1a;
+            --bg-card: #212120;
+            --bg-code: #292928;
+            --text-primary: #edede7;
+            --text-secondary: #9b9b95;
+            --accent: #b8b315;
+            --accent-dim: #b8b31544;
+            --accent-glow: #b8b31533;
+            --border: #363633;
             --font-display: 'Space Grotesk', sans-serif;
             --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
             --font-body: 'Inter', sans-serif;
@@ -228,7 +228,7 @@
             font-family: var(--font-mono);
             font-size: 0.75rem;
             color: var(--accent);
-            background: rgba(118, 185, 0, 0.08);
+            background: rgba(184,179,21,0.08);
             padding: 0.4rem 1rem;
             border-bottom: 1px solid var(--border);
         }
@@ -243,18 +243,18 @@
             font-family: var(--font-mono);
             font-size: 0.85rem;
             line-height: 1.6;
-            color: #c9d1d9;
+            color: #d5d5cf;
         }
 
         /* Syntax highlighting (manual) */
-        .kw { color: #ff7b72; }
-        .fn { color: #d2a8ff; }
-        .str { color: #a5d6ff; }
-        .cm { color: #8b949e; font-style: italic; }
-        .num { color: #79c0ff; }
-        .type { color: #ffa657; }
-        .dir { color: #ff7b72; }
-        .mac { color: #ffa657; }
+        .kw { color: #e57d63; }
+        .fn { color: #d1c2e1; }
+        .str { color: #c9dbe2; }
+        .cm { color: #9b9b95; font-style: italic; }
+        .num { color: #afcbd8; }
+        .type { color: #e0b172; }
+        .dir { color: #e57d63; }
+        .mac { color: #e0b172; }
 
         /* ── Tables ── */
         .table-wrap {
@@ -292,7 +292,7 @@
         }
 
         tr:nth-child(even) td {
-            background: rgba(13, 17, 23, 0.5);
+            background: rgba(33,33,32,0.5);
         }
 
         /* ── Diagrams ── */
@@ -324,7 +324,7 @@
         .diagram-box.accent {
             border-color: var(--accent);
             color: var(--accent);
-            background: rgba(118, 185, 0, 0.08);
+            background: rgba(184,179,21,0.08);
         }
 
         .diagram-box.dim {
@@ -555,10 +555,10 @@
             left: 0;
             width: 42%;
             height: 82%;
-            border-bottom: 2px solid #ffa657;
+            border-bottom: 2px solid #e0b172;
             border-right: none;
             transform-origin: bottom left;
-            background: linear-gradient(to top right, transparent calc(100% - 1.5px), #ffa657 calc(100% - 1.5px), #ffa657 100%);
+            background: linear-gradient(to top right, transparent calc(100% - 1.5px), #e0b172 calc(100% - 1.5px), #e0b172 100%);
             background-size: 100% 100%;
             background-repeat: no-repeat;
         }
@@ -569,7 +569,7 @@
             left: 8%;
             font-family: var(--font-mono);
             font-size: 0.7rem;
-            color: #ffa657;
+            color: #e0b172;
             transform: rotate(-52deg);
             white-space: nowrap;
         }
@@ -647,7 +647,7 @@
             justify-content: center;
             font-family: var(--font-mono);
             font-size: 0.55rem;
-            color: #fff;
+            color: #fafaf6;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -883,8 +883,8 @@
             <div class="roofline-region-label" style="top: 18%; right: 8%;">Compute-Bound</div>
 
             <!-- Naive matmul marker (low intensity, low on slope) -->
-            <div class="roofline-marker" style="left: 18%; top: 62%; background: #ff7b72; border: 2px solid #ff7b72;"></div>
-            <div class="roofline-marker-label" style="left: 18%; top: 72%; color: #ff7b72;">Naive MatMul</div>
+            <div class="roofline-marker" style="left: 18%; top: 62%; background: #e57d63; border: 2px solid #e57d63;"></div>
+            <div class="roofline-marker-label" style="left: 18%; top: 72%; color: #e57d63;">Naive MatMul</div>
 
             <!-- Tiled matmul marker (higher intensity, near roof) -->
             <div class="roofline-marker" style="left: 58%; top: 14%; background: var(--accent); border: 2px solid var(--accent);"></div>
@@ -949,21 +949,21 @@
         <div class="timeline-row">
             <div class="timeline-label">CPU Thread</div>
             <div class="timeline-track">
-                <div class="timeline-block" style="left: 2%; width: 8%; background: #8b949e;">Setup</div>
-                <div class="timeline-block" style="left: 12%; width: 5%; background: #ffa657;">cudaMalloc</div>
-                <div class="timeline-block" style="left: 19%; width: 4%; background: #ffa657;">cudaMemcpy</div>
-                <div class="timeline-block" style="left: 25%; width: 3%; background: #d2a8ff;">Launch</div>
-                <div class="timeline-block" style="left: 30%; width: 18%; background: #8b949e55; border: 1px dashed #8b949e; color: #8b949e;">cudaDeviceSynchronize</div>
-                <div class="timeline-block" style="left: 50%; width: 4%; background: #ffa657;">cudaMemcpy</div>
-                <div class="timeline-block" style="left: 56%; width: 4%; background: #ffa657;">cudaFree</div>
+                <div class="timeline-block" style="left: 2%; width: 8%; background: #9b9b95;">Setup</div>
+                <div class="timeline-block" style="left: 12%; width: 5%; background: #e0b172;">cudaMalloc</div>
+                <div class="timeline-block" style="left: 19%; width: 4%; background: #e0b172;">cudaMemcpy</div>
+                <div class="timeline-block" style="left: 25%; width: 3%; background: #d1c2e1;">Launch</div>
+                <div class="timeline-block" style="left: 30%; width: 18%; background: #9b9b9555; border: 1px dashed #9b9b95; color: #9b9b95;">cudaDeviceSynchronize</div>
+                <div class="timeline-block" style="left: 50%; width: 4%; background: #e0b172;">cudaMemcpy</div>
+                <div class="timeline-block" style="left: 56%; width: 4%; background: #e0b172;">cudaFree</div>
             </div>
         </div>
 
         <div class="timeline-row">
             <div class="timeline-label">Memcpy</div>
             <div class="timeline-track">
-                <div class="timeline-block" style="left: 19%; width: 6%; background: #79c0ff;">H&rarr;D</div>
-                <div class="timeline-block" style="left: 50%; width: 5%; background: #a5d6ff;">D&rarr;H</div>
+                <div class="timeline-block" style="left: 19%; width: 6%; background: #afcbd8;">H&rarr;D</div>
+                <div class="timeline-block" style="left: 50%; width: 5%; background: #c9dbe2;">D&rarr;H</div>
             </div>
         </div>
 
@@ -1056,14 +1056,14 @@
         <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); margin-bottom: 1rem;">Speed of Light — Throughput</div>
         <div class="metric-bar-wrap">
             <div class="metric-bar-label"><span>SM [%]</span> <span>23.4%</span></div>
-            <div class="metric-bar"><div class="metric-bar-fill" style="width: 23.4%; background: #ff7b72;"></div></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 23.4%; background: #e57d63;"></div></div>
         </div>
         <div class="metric-bar-wrap">
             <div class="metric-bar-label"><span>Memory [%]</span> <span>78.6%</span></div>
             <div class="metric-bar"><div class="metric-bar-fill" style="width: 78.6%; background: var(--accent);"></div></div>
         </div>
         <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.75rem;">
-            Memory &gt;&gt; Compute &rarr; This kernel is <span style="color: #ffa657;">memory-bound</span>
+            Memory &gt;&gt; Compute &rarr; This kernel is <span style="color: #e0b172;">memory-bound</span>
         </div>
     </div>
 
@@ -1159,23 +1159,23 @@
         <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); margin-bottom: 1rem;">Occupancy vs Block Size (example: 40 regs/thread, 0 shared mem)</div>
         <div class="metric-bar-wrap">
             <div class="metric-bar-label"><span>Block 64 &mdash; 4 blocks/SM</span> <span>12.5%</span></div>
-            <div class="metric-bar"><div class="metric-bar-fill" style="width: 12.5%; background: #ff7b72;"></div></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 12.5%; background: #e57d63;"></div></div>
         </div>
         <div class="metric-bar-wrap">
             <div class="metric-bar-label"><span>Block 128 &mdash; 8 blocks/SM</span> <span>50%</span></div>
-            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #ffa657;"></div></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #e0b172;"></div></div>
         </div>
         <div class="metric-bar-wrap">
             <div class="metric-bar-label"><span>Block 256 &mdash; 4 blocks/SM</span> <span>50%</span></div>
-            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #ffa657;"></div></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #e0b172;"></div></div>
         </div>
         <div class="metric-bar-wrap">
             <div class="metric-bar-label"><span>Block 512 &mdash; 2 blocks/SM</span> <span>50%</span></div>
-            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #ffa657;"></div></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #e0b172;"></div></div>
         </div>
         <div class="metric-bar-wrap">
             <div class="metric-bar-label"><span>Block 1024 &mdash; 1 block/SM</span> <span>50%</span></div>
-            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #ffa657;"></div></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 50%; background: #e0b172;"></div></div>
         </div>
     </div>
 
@@ -1211,10 +1211,10 @@
             <h4>Strided Access (25% efficiency)</h4>
             <p>32 threads each access every 4th element. Four 128-byte transactions needed, but only 128 bytes are useful.</p>
             <div style="display: flex; gap: 2px; margin-top: 0.5rem;">
-                <div style="flex: 1; height: 16px; background: #ff7b72; border-radius: 2px; opacity: 0.4;"></div>
-                <div style="flex: 1; height: 16px; background: #ff7b72; border-radius: 2px; opacity: 0.4;"></div>
-                <div style="flex: 1; height: 16px; background: #ff7b72; border-radius: 2px; opacity: 0.4;"></div>
-                <div style="flex: 1; height: 16px; background: #ff7b72; border-radius: 2px; opacity: 0.4;"></div>
+                <div style="flex: 1; height: 16px; background: #e57d63; border-radius: 2px; opacity: 0.4;"></div>
+                <div style="flex: 1; height: 16px; background: #e57d63; border-radius: 2px; opacity: 0.4;"></div>
+                <div style="flex: 1; height: 16px; background: #e57d63; border-radius: 2px; opacity: 0.4;"></div>
+                <div style="flex: 1; height: 16px; background: #e57d63; border-radius: 2px; opacity: 0.4;"></div>
             </div>
             <div style="font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-secondary); margin-top: 0.3rem; text-align: center;">4 transactions &rarr; 128 bytes used / 512 bytes fetched</div>
         </div>
@@ -1361,7 +1361,7 @@
                     <td><strong>SOL Memory [%]</strong></td>
                     <td>78.6%</td>
                     <td>34.2%</td>
-                    <td style="color: #ff7b72;">&darr; (good: no longer the bottleneck)</td>
+                    <td style="color: #e57d63;">&darr; (good: no longer the bottleneck)</td>
                 </tr>
                 <tr>
                     <td><strong>DRAM Throughput</strong></td>
@@ -1399,15 +1399,15 @@
 
     <h3>SOL Comparison — Before &amp; After</h3>
     <div class="diagram-grid cols-2">
-        <div class="diagram-panel" style="border-left: 3px solid #ff7b72;">
-            <h4 style="color: #ff7b72;">Naive MatMul — Memory-Bound</h4>
+        <div class="diagram-panel" style="border-left: 3px solid #e57d63;">
+            <h4 style="color: #e57d63;">Naive MatMul — Memory-Bound</h4>
             <div class="metric-bar-wrap">
                 <div class="metric-bar-label"><span>SM [%]</span> <span>12.1%</span></div>
-                <div class="metric-bar"><div class="metric-bar-fill" style="width: 12.1%; background: #ff7b72;"></div></div>
+                <div class="metric-bar"><div class="metric-bar-fill" style="width: 12.1%; background: #e57d63;"></div></div>
             </div>
             <div class="metric-bar-wrap">
                 <div class="metric-bar-label"><span>Memory [%]</span> <span>78.6%</span></div>
-                <div class="metric-bar"><div class="metric-bar-fill" style="width: 78.6%; background: #ff7b72;"></div></div>
+                <div class="metric-bar"><div class="metric-bar-fill" style="width: 78.6%; background: #e57d63;"></div></div>
             </div>
             <p style="font-size: 0.75rem; margin-top: 0.5rem;">Bottleneck: DRAM bandwidth</p>
         </div>
